@@ -1,0 +1,30 @@
+{
+  "name": "napi-snap7",
+  "version": "0.1.0",
+  "description": "Node-API addon for Snap7 library",
+  "keywords": [
+    "Snap7",
+    "S7",
+    "Simatic",
+    "PLC"
+  ],
+  "main": "lib/binding.js",
+  "dependencies": {
+    "node-addon-api": "^4.3.0",
+    "node-gyp-build": "^4.3.0"
+  },
+  "devDependencies": {
+    "prebuildify": "^5.0.0"
+  },
+  "author": "Fabio Riva <f.riva@sotefin.ch>",
+  "license": "MIT",
+  "scripts": {
+    "install": "node-gyp-build",
+    "test": "echo \"Error: no test specified\"",
+    "prebuild": "prebuildify --napi"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fabioriva/napi-snap7.git"
+  }
+}

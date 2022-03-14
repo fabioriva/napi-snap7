@@ -1,0 +1,56 @@
+build: false
+
+skip_branch_with_pr: true
+
+environment:
+  matrix:
+    - nodejs_version: "Current"
+
+configuration: Release
+platform:
+  - x86
+  - x64
+
+image:
+ - Ubuntu
+ - Visual Studio 2015
+
+install:
+  - npm install
+
+test_script:
+  - node --version
+  - npm --version
+  - npm test
+
+deploy:
+  release: napi-snap7-v$(APPVEYOR_BUILD_VERSION)
+  description: 'Release description'
+  provider: GitHub
+  artifact: /.*\.zip/
+  auth_token:
+    secure: Pb1VVfUoXOiHwF9pioEKnqB8gig3lZbtazZ/YiOeASnSTipWoI5xz78luZ8QOe98
+  draft: false
+  prerelease: false
+  on:
+    branch: master                 # release from master branch only
+    APPVEYOR_REPO_TAG: false       # deploy on tag push only
+
+# after_test:
+#   - ps: If ($env:nodejs_version -eq "Current") { npm run prebuild }
+
+# artifacts:
+#   - path: prebuilds
+#     name: $(APPVEYOR_REPO_TAG_NAME)-win-$(PLATFORM)
+#     type: zip
+
+# deploy:
+#   - provider: GitHub
+#     artifact: /.*\.zip/
+#     draft: false
+#     prerelease: true
+#     auth_token:
+#       secure: v2.k1227ospkeaoh22pdotk
+#     on:
+#       appveyor_repo_tag: true
+#       nodejs_version: "Current"
