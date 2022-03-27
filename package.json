@@ -8,7 +8,7 @@
     "Simatic",
     "PLC"
   ],
-  "main": "lib/binding.js",
+  "main": "index.js",
   "dependencies": {
     "node-addon-api": "^4.3.0",
     "node-gyp-build": "^4.3.0"
