@@ -1,6 +1,0 @@
-.gitignore
-.npmignore
-.vscode
-.travis.yml
-appveyor.yml
-node_modules
