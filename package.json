@@ -21,7 +21,7 @@
   "scripts": {
     "install": "node-gyp-build",
     "test": "echo \"Error: no test specified\"",
-    "prebuild": "prebuildify --napi"
+    "build": "prebuildify --napi"
   },
   "repository": {
     "type": "git",

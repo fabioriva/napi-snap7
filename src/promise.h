@@ -32,25 +32,19 @@ public:
 
         if (res != 0)
         {
-            AsyncWorker::SetError("Error!");
+            AsyncWorker::SetError("Eroor");
         }
     }
 
     void OnOK()
     {
-        if (res == 0)
-        {
-            deferred.Resolve(Buffer<uint8_t>::New(Env(), dataPtr, dataLength));
-        }
-        else
-        {
-            deferred.Resolve(Number::New(Env(), res));
-        }
+        deferred.Resolve(Buffer<uint8_t>::New(Env(), dataPtr, dataLength));
     }
 
     void OnError(Error const &error)
     {
-        deferred.Reject(error.Value());
+        // deferred.Reject(error.Value());
+        deferred.Reject(Number::New(Env(), res));
     }
 
     Promise GetPromise() { return deferred.Promise(); }
