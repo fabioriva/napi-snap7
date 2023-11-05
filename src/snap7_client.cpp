@@ -89,7 +89,7 @@ Napi::Value S7Client::SetConnectionParams(const Napi::CallbackInfo &info)
         return env.Null();
     }
 
-    if (!info[0].IsNumber() || !info[1].IsNumber() || !info[2].IsNumber())
+    if (!info[0].IsString() || !info[1].IsNumber() || !info[2].IsNumber())
     {
         Napi::TypeError::New(env, "Wrong arguments").ThrowAsJavaScriptException();
         return env.Null();
