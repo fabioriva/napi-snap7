@@ -15,6 +15,10 @@ Napi::Object S7Client::Init(Napi::Env env, Napi::Object exports)
                         InstanceMethod("ReadArea", &S7Client::ReadArea),
                         InstanceMethod("WriteAreaSync", &S7Client::WriteAreaSync),
                         InstanceMethod("WriteArea", &S7Client::WriteArea),
+                        InstanceMethod("DBReadSync", &S7Client::ReadAreaSync),
+                        InstanceMethod("DBRead", &S7Client::ReadArea),
+                        InstanceMethod("DBWriteSync", &S7Client::WriteAreaSync),
+                        InstanceMethod("DBWrite", &S7Client::WriteArea),
                         InstanceMethod("GetConnected", &S7Client::GetConnected),
                         InstanceMethod("GetLastError", &S7Client::GetLastError),
                         InstanceMethod("ErrorText", &S7Client::ErrorText),
@@ -96,7 +100,7 @@ Napi::Value S7Client::SetConnectionParams(const Napi::CallbackInfo &info)
     }
 
     // const char *Address = info[0].As<Napi::String>().Utf8Value().c_str(); // not for windows!
-    std::string str = info[0].As<Napi::String>().Utf8Value() ;
+    std::string str = info[0].As<Napi::String>().Utf8Value();
     const char *Address = str.c_str();
     int LocalTSAP = info[1].As<Napi::Number>().Uint32Value();
     int RemoteTSAP = info[2].As<Napi::Number>().Uint32Value();
@@ -170,13 +174,13 @@ Napi::Value S7Client::ReadArea(const Napi::CallbackInfo &info)
     if (info[5].IsFunction())
     {
         Napi::Function callback = info[5].As<Function>();
-        ReadCallbackWorker *wk = new ReadCallbackWorker(callback, Client, Area, DBNumber, Start, Amount, WordLen, WordSize);
+        ReadAreaCallbackWorker *wk = new ReadAreaCallbackWorker(callback, Client, Area, DBNumber, Start, Amount, WordLen, WordSize);
         wk->Queue();
         return env.Undefined();
     }
     else
     {
-        ReadPromiseWorker *wk = new ReadPromiseWorker(env, Client, Area, DBNumber, Start, Amount, WordLen, WordSize);
+        ReadAreaPromiseWorker *wk = new ReadAreaPromiseWorker(env, Client, Area, DBNumber, Start, Amount, WordLen, WordSize);
         auto promise = wk->GetPromise();
         wk->Queue();
         return promise;
@@ -223,13 +227,115 @@ Napi::Value S7Client::WriteArea(const Napi::CallbackInfo &info)
     if (info[6].IsFunction())
     {
         Napi::Function callback = info[6].As<Function>();
-        WriteCallbackWorker *wk = new WriteCallbackWorker(callback, Client, Area, DBNumber, Start, Amount, WordLen, Buffer);
+        WriteAreaCallbackWorker *wk = new WriteAreaCallbackWorker(callback, Client, Area, DBNumber, Start, Amount, WordLen, Buffer);
         wk->Queue();
         return env.Undefined();
     }
     else
     {
-        WritePromiseWorker *wk = new WritePromiseWorker(env, Client, Area, DBNumber, Start, Amount, WordLen, Buffer);
+        WriteAreaPromiseWorker *wk = new WriteAreaPromiseWorker(env, Client, Area, DBNumber, Start, Amount, WordLen, Buffer);
+        auto promise = wk->GetPromise();
+        wk->Queue();
+        return promise;
+    }
+}
+//---------------------------------------------------------------------------
+
+Napi::Value S7Client::DBReadSync(const Napi::CallbackInfo &info)
+{
+    ParametersCheck(info, 3);
+
+    Napi::Env env = info.Env();
+
+    int DBNumber = info[0].As<Napi::Number>().Int32Value();
+    int Start = info[1].As<Napi::Number>().Int32Value();
+    int WordSize = info[2].As<Napi::Number>().Int32Value();
+
+    uint8_t *pBuffer = new uint8_t[WordSize];
+
+    int res = Client->DBRead(DBNumber, Start, WordSize, pBuffer);
+
+    if (res == 0)
+    {
+        return Napi::Buffer<uint8_t>::New(env, pBuffer, WordSize);
+    }
+    else
+    {
+        TextString err = CliErrorText(res);
+        Napi::TypeError::New(env, err).ThrowAsJavaScriptException();
+        return env.Null();
+    }
+}
+//---------------------------------------------------------------------------
+Napi::Value S7Client::DBRead(const Napi::CallbackInfo &info)
+{
+    ParametersCheck(info, 3);
+
+    Napi::Env env = info.Env();
+
+    int DBNumber = info[0].As<Napi::Number>().Int32Value();
+    int Start = info[1].As<Napi::Number>().Int32Value();
+    int WordSize = info[2].As<Napi::Number>().Int32Value();
+
+    if (info[3].IsFunction())
+    {
+        Napi::Function callback = info[3].As<Function>();
+        DBReadCallbackWorker *wk = new DBReadCallbackWorker(callback, Client, DBNumber, Start, WordSize);
+        wk->Queue();
+        return env.Undefined();
+    }
+    else
+    {
+        DBReadPromiseWorker *wk = new DBReadPromiseWorker(env, Client, DBNumber, Start, WordSize);
+        auto promise = wk->GetPromise();
+        wk->Queue();
+        return promise;
+    }
+}
+//---------------------------------------------------------------------------
+Napi::Value S7Client::DBWriteSync(const Napi::CallbackInfo &info)
+{
+    ParametersCheck(info, 3);
+
+    Napi::Env env = info.Env();
+
+    int DBNumber = info[0].As<Napi::Number>().Int32Value();
+    int Start = info[1].As<Napi::Number>().Int32Value();
+    int WordSize = info[2].As<Napi::Number>().Int32Value();
+
+    Napi::Uint8Array arr = info[3].As<Napi::Uint8Array>();
+    // size_t length = arr.ElementLength(); // == size
+    uint8_t *Buffer = reinterpret_cast<uint8_t *>(arr.ArrayBuffer().Data());
+
+    int res = Client->DBWrite(DBNumber, Start, WordSize, Buffer);
+
+    return Napi::Number::New(env, res);
+}
+//---------------------------------------------------------------------------
+Napi::Value S7Client::DBWrite(const Napi::CallbackInfo &info)
+{
+    ParametersCheck(info, 3);
+
+    Napi::Env env = info.Env();
+
+    int DBNumber = info[0].As<Napi::Number>().Int32Value();
+    int Start = info[1].As<Napi::Number>().Int32Value();
+    int WordSize = info[2].As<Napi::Number>().Int32Value();
+
+    Napi::Uint8Array arr = info[3].As<Napi::Uint8Array>();
+    // size_t length = arr.ElementLength(); // == size
+    uint8_t *Buffer = reinterpret_cast<uint8_t *>(arr.ArrayBuffer().Data());
+
+    if (info[4].IsFunction())
+    {
+        Napi::Function callback = info[4].As<Function>();
+        DBWriteCallbackWorker *wk = new DBWriteCallbackWorker(callback, Client, DBNumber, Start, WordSize, Buffer);
+        wk->Queue();
+        return env.Undefined();
+    }
+    else
+    {
+        DBWritePromiseWorker *wk = new DBWritePromiseWorker(env, Client, DBNumber, Start, WordSize, Buffer);
         auto promise = wk->GetPromise();
         wk->Queue();
         return promise;
@@ -267,36 +373,67 @@ void S7Client::ParametersCheck(const Napi::CallbackInfo &info, int length)
 {
     Napi::Env env = info.Env();
 
-    if (info.Length() < length)
+    if (length == 3)
     {
-        Napi::TypeError::New(env, "Usage: Area, DBNumber, Start, Amount, WordLen").ThrowAsJavaScriptException();
-        return;
+        if (info.Length() < length)
+        {
+            Napi::TypeError::New(env, "Usage: DBNumber, Start, WordSize").ThrowAsJavaScriptException();
+            return;
+        }
+        if (!info[0].IsNumber()) // DBNumber
+        {
+            Napi::TypeError::New(env, "DBNumber must be of type integer").ThrowAsJavaScriptException();
+            return;
+        }
+        if (!info[1].IsNumber()) // Start
+        {
+            Napi::TypeError::New(env, "Start must be of type integer").ThrowAsJavaScriptException();
+            return;
+        }
+        if (!info[2].IsNumber()) // WordSize
+        {
+            Napi::TypeError::New(env, "WordSize must be of type integer").ThrowAsJavaScriptException();
+            return;
+        }
     }
-    if (!info[0].IsNumber()) // Area
+
+    if (length == 5)
     {
-        Napi::TypeError::New(env, "Area must be of type integer").ThrowAsJavaScriptException();
-        return;
+        if (info.Length() < length)
+        {
+            Napi::TypeError::New(env, "Usage: Area, DBNumber, Start, Amount, WordLen").ThrowAsJavaScriptException();
+            return;
+        }
+        if (!info[0].IsNumber()) // Area
+        {
+            Napi::TypeError::New(env, "Area must be of type integer").ThrowAsJavaScriptException();
+            return;
+        }
+        if (!info[1].IsNumber()) // DBNumber
+        {
+            Napi::TypeError::New(env, "DBNumber must be of type integer").ThrowAsJavaScriptException();
+            return;
+        }
+        if (!info[2].IsNumber()) // Start
+        {
+            Napi::TypeError::New(env, "Start must be of type integer").ThrowAsJavaScriptException();
+            return;
+        }
+        if (!info[3].IsNumber()) // Amount
+        {
+            Napi::TypeError::New(env, "Amount must be of type integer").ThrowAsJavaScriptException();
+            return;
+        }
+        if (!info[4].IsNumber()) // WordLen
+        {
+            Napi::TypeError::New(env, "WordLen must be of type integer").ThrowAsJavaScriptException();
+            return;
+        }
     }
-    if (!info[1].IsNumber()) // DBNumber
-    {
-        Napi::TypeError::New(env, "DBNumber must be of type integer").ThrowAsJavaScriptException();
-        return;
-    }
-    if (!info[2].IsNumber()) // Start
-    {
-        Napi::TypeError::New(env, "Start must be of type integer").ThrowAsJavaScriptException();
-        return;
-    }
-    if (!info[3].IsNumber()) // Amount
-    {
-        Napi::TypeError::New(env, "Amount must be of type integer").ThrowAsJavaScriptException();
-        return;
-    }
-    if (!info[4].IsNumber()) // WordLen
-    {
-        Napi::TypeError::New(env, "WordLen must be of type integer").ThrowAsJavaScriptException();
-        return;
-    }
+}
+//---------------------------------------------------------------------------
+void S7Client::ParametersCheck(int DBNumber, int Start, int WordSize)
+{
 }
 //---------------------------------------------------------------------------
 void S7Client::ParametersCheck(int Area, int DBNumber, int Start, int Amount, int WordLen)

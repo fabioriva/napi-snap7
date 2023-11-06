@@ -3,10 +3,10 @@
 
 using namespace Napi;
 
-class ReadPromiseWorker : public AsyncWorker
+class ReadAreaPromiseWorker : public AsyncWorker
 {
 public:
-    ReadPromiseWorker(Napi::Env &env, TS7Client *Client, int Area, int DBNumber, int Start, int Amount, int WordLen, int WordSize)
+    ReadAreaPromiseWorker(Napi::Env &env, TS7Client *Client, int Area, int DBNumber, int Start, int Amount, int WordLen, int WordSize)
         : AsyncWorker(env),
           Client(Client),
           Area(Area),
@@ -17,7 +17,7 @@ public:
           WordSize(WordSize),
           deferred(Promise::Deferred::New(env)) {}
 
-    ~ReadPromiseWorker() {}
+    ~ReadAreaPromiseWorker() {}
 
     void Execute()
     {
@@ -64,10 +64,10 @@ private:
     Promise::Deferred deferred;
 };
 
-class WritePromiseWorker : public AsyncWorker
+class WriteAreaPromiseWorker : public AsyncWorker
 {
 public:
-    WritePromiseWorker(Napi::Env &env, TS7Client *Client, int Area, int DBNumber, int Start, int Amount, int WordLen, uint8_t *Buffer)
+    WriteAreaPromiseWorker(Napi::Env &env, TS7Client *Client, int Area, int DBNumber, int Start, int Amount, int WordLen, uint8_t *Buffer)
         : AsyncWorker(env),
           Client(Client),
           Area(Area),
@@ -78,7 +78,7 @@ public:
           Buffer(Buffer),
           deferred(Promise::Deferred::New(env)) {}
 
-    ~WritePromiseWorker() {}
+    ~WriteAreaPromiseWorker() {}
 
     void Execute()
     {
@@ -120,4 +120,109 @@ private:
     Promise::Deferred deferred;
 };
 
+class DBReadPromiseWorker : public AsyncWorker
+{
+public:
+    DBReadPromiseWorker(Napi::Env &env, TS7Client *Client, int DBNumber, int Start, int WordSize)
+        : AsyncWorker(env),
+          Client(Client),
+          DBNumber(DBNumber),
+          Start(Start),
+          WordSize(WordSize),
+          deferred(Promise::Deferred::New(env)) {}
+
+    ~DBReadPromiseWorker() {}
+
+    void Execute()
+    {
+        dataLength = 1 * WordSize;
+        dataPtr = new uint8_t[dataLength];
+
+        Client->mutex.lock();
+
+        res = Client->DBRead(DBNumber, Start, WordSize, dataPtr);
+
+        Client->mutex.unlock();
+
+        if (res != 0)
+        {
+            AsyncWorker::SetError("Eroor");
+        }
+    }
+
+    void OnOK()
+    {
+        deferred.Resolve(Buffer<uint8_t>::New(Env(), dataPtr, dataLength));
+    }
+
+    void OnError(Error const &error)
+    {
+        // deferred.Reject(error.Value());
+        deferred.Reject(Number::New(Env(), res));
+    }
+
+    Promise GetPromise() { return deferred.Promise(); }
+
+private:
+    TS7Client *Client;
+    int DBNumber;
+    int Start;
+    int WordSize;
+    int res;
+    uint8_t *dataPtr;
+    size_t dataLength;
+
+    Promise::Deferred deferred;
+};
+
+class DBWritePromiseWorker : public AsyncWorker
+{
+public:
+    DBWritePromiseWorker(Napi::Env &env, TS7Client *Client, int DBNumber, int Start, int WordSize, uint8_t *Buffer)
+        : AsyncWorker(env),
+          Client(Client),
+          DBNumber(DBNumber),
+          Start(Start),
+          WordSize(WordSize),
+          Buffer(Buffer),
+          deferred(Promise::Deferred::New(env)) {}
+
+    ~DBWritePromiseWorker() {}
+
+    void Execute()
+    {
+        Client->mutex.lock();
+
+        res = Client->DBWrite(DBNumber, Start, WordSize, Buffer);
+
+        Client->mutex.unlock();
+
+        if (res != 0)
+        {
+            AsyncWorker::SetError("Error!");
+        }
+    }
+
+    void OnOK()
+    {
+        deferred.Resolve(Number::New(Env(), res));
+    }
+
+    void OnError(Error const &error)
+    {
+        deferred.Reject(error.Value());
+    }
+
+    Promise GetPromise() { return deferred.Promise(); }
+
+private:
+    TS7Client *Client;
+    int DBNumber;
+    int Start;
+    int WordSize;
+    int res;
+    uint8_t *Buffer;
+
+    Promise::Deferred deferred;
+};
 #endif
