@@ -24,6 +24,11 @@ public:
     Napi::Value ReadArea(const Napi::CallbackInfo &info);
     Napi::Value WriteAreaSync(const Napi::CallbackInfo &info);
     Napi::Value WriteArea(const Napi::CallbackInfo &info);
+    // Data I/O Lean functions
+    Napi::Value DBReadSync(const Napi::CallbackInfo &info);
+    Napi::Value DBRead(const Napi::CallbackInfo &info);
+    Napi::Value DBWriteSync(const Napi::CallbackInfo &info);
+    Napi::Value DBWrite(const Napi::CallbackInfo &info);
     // Utility functions
     Napi::Value GetConnected(const Napi::CallbackInfo &info);
     Napi::Value GetLastError(const Napi::CallbackInfo &info);
