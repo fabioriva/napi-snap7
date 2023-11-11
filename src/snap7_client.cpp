@@ -222,7 +222,7 @@ Napi::Value S7Client::WriteArea(const Napi::CallbackInfo &info)
 
     Napi::Uint8Array arr = info[5].As<Napi::Uint8Array>();
     // size_t length = arr.ElementLength(); // == size
-    uint8_t *Buffer = reinterpret_cast<uint8_t *>(arr.ArrayBuffer().Data());
+    uint8_t *Buffer = reinterpret_cast<uint8_t *>(arr.Data());
 
     if (info[6].IsFunction())
     {
@@ -324,7 +324,7 @@ Napi::Value S7Client::DBWrite(const Napi::CallbackInfo &info)
 
     Napi::Uint8Array arr = info[3].As<Napi::Uint8Array>();
     // size_t length = arr.ElementLength(); // == size
-    uint8_t *Buffer = reinterpret_cast<uint8_t *>(arr.ArrayBuffer().Data());
+    uint8_t *Buffer = reinterpret_cast<uint8_t *>(arr.Data());
 
     if (info[4].IsFunction())
     {
