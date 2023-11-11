@@ -1,6 +1,6 @@
 {
   "name": "napi-snap7",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "Node-API addon for Snap7 library",
   "keywords": [
     "Snap7",
