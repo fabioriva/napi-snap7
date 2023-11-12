@@ -15,10 +15,10 @@ Napi::Object S7Client::Init(Napi::Env env, Napi::Object exports)
                         InstanceMethod("ReadArea", &S7Client::ReadArea),
                         InstanceMethod("WriteAreaSync", &S7Client::WriteAreaSync),
                         InstanceMethod("WriteArea", &S7Client::WriteArea),
-                        InstanceMethod("DBReadSync", &S7Client::ReadAreaSync),
-                        InstanceMethod("DBRead", &S7Client::ReadArea),
-                        InstanceMethod("DBWriteSync", &S7Client::WriteAreaSync),
-                        InstanceMethod("DBWrite", &S7Client::WriteArea),
+                        InstanceMethod("DBReadSync", &S7Client::DBReadSync),
+                        InstanceMethod("DBRead", &S7Client::DBRead),
+                        InstanceMethod("DBWriteSync", &S7Client::DBWriteSync),
+                        InstanceMethod("DBWrite", &S7Client::DBWrite),
                         InstanceMethod("GetConnected", &S7Client::GetConnected),
                         InstanceMethod("GetLastError", &S7Client::GetLastError),
                         InstanceMethod("ErrorText", &S7Client::ErrorText),
@@ -222,7 +222,7 @@ Napi::Value S7Client::WriteArea(const Napi::CallbackInfo &info)
 
     Napi::Uint8Array arr = info[5].As<Napi::Uint8Array>();
     // size_t length = arr.ElementLength(); // == size
-    uint8_t *Buffer = reinterpret_cast<uint8_t *>(arr.ArrayBuffer().Data());
+    uint8_t *Buffer = reinterpret_cast<uint8_t *>(arr.Data());
 
     if (info[6].IsFunction())
     {
@@ -324,7 +324,7 @@ Napi::Value S7Client::DBWrite(const Napi::CallbackInfo &info)
 
     Napi::Uint8Array arr = info[3].As<Napi::Uint8Array>();
     // size_t length = arr.ElementLength(); // == size
-    uint8_t *Buffer = reinterpret_cast<uint8_t *>(arr.ArrayBuffer().Data());
+    uint8_t *Buffer = reinterpret_cast<uint8_t *>(arr.Data());
 
     if (info[4].IsFunction())
     {
