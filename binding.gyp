@@ -11,7 +11,16 @@
         "<!@(node -p \"require('node-addon-api').include\")"
       ],
       "dependencies": ["<!(node -p \"require('node-addon-api').gyp\")", "snap7"],
-      "cflags!": [ "-fno-exceptions" ],
+      "cflags": [
+        "-Wno-stringop-truncation",
+        "-Wno-unused-but-set-variable",
+        "-Wno-misleading-indentation",
+        "-Wno-maybe-uninitialized",
+        "-Wno-array-bounds",
+        "-Wno-sign-compare",
+        "-Wno-stringop-overread"
+      ],
+      "cflags!": [ "-fno-exceptions"],
       "cflags_cc!": [ "-fno-exceptions" ],
       "defines": [ "NAPI_DISABLE_CPP_EXCEPTIONS"],
       "conditions": [
@@ -42,6 +51,15 @@
         "./deps/snap7/src/sys",
         "./deps/snap7/src/core",
         "./deps/snap7/src/lib"
+      ],
+      "cflags": [
+        "-Wno-stringop-truncation",
+        "-Wno-unused-but-set-variable",
+        "-Wno-misleading-indentation",
+        "-Wno-maybe-uninitialized",
+        "-Wno-array-bounds",
+        "-Wno-sign-compare",
+        "-Wno-stringop-overread"
       ],
       "cflags!": [ "-fno-exceptions" ],
       "cflags_cc!": ["-fno-exceptions"],
